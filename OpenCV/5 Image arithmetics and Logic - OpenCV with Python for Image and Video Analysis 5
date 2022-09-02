@@ -1,0 +1,87 @@
+Reference:
+https://www.youtube.com/watch?v=_gfNpJmWIug&list=PLQVvvaa0QuDdttJXlLtAJxJetJcqmqlQq&index=5&t=1s
+https://www.geeksforgeeks.org/python-thresholding-techniques-using-opencv-set-1-simple-thresholding/
+https://learnopencv.com/opencv-threshold-python-cpp/
+
+
+Function
+Syntax: cv2.threshold(source, thresholdValue, maxVal, thresholdingTechnique) 
+Parameters: 
+-> source: Input Image array (must be in Grayscale). 
+-> thresholdValue: Value of Threshold below and above which pixel values will change accordingly. 
+-> maxVal: Maximum value that can be assigned to a pixel. 
+-> thresholdingTechnique: The type of thresholding to be applied. 
+
+The pseudo is:
+# Simple threshold function pseudo code
+if src(x,y) > thresh
+  dst(x,y) = maxValue
+else
+  dst(x,y) = 0
+
+
+thresholdingTechnique:
+cv2.THRESH_BINARY: If pixel intensity is greater than the set threshold, value set to 255, else set to 0 (black).
+cv2.THRESH_BINARY_INV: Inverted or Opposite case of cv2.THRESH_BINARY.
+cv.THRESH_TRUNC: If pixel intensity value is greater than threshold, it is truncated to the threshold. The pixel values are set to be the same as the threshold. All other values remain the same.
+cv.THRESH_TOZERO: Pixel intensity is set to 0, for all the pixels intensity, less than the threshold value.
+cv.THRESH_TOZERO_INV: Inverted or Opposite case of cv2.THRESH_TOZERO.
+
+CODE
+=========================
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+#read two imgs
+img1 = cv2.imread('ditto.jpg')
+#img2 = cv2.imread('eevee.jpg')
+img2 = cv2.imread('pika.jpg')
+
+
+#add = img1 + img2
+#add = cv2.add(img1, img2)
+#eighted = cv2.addWeighted(img1, 0.6, img2, 0.4, 0)
+rows, cols, channels = img2.shape
+roi =  img1[0:rows, 0:cols]
+
+#0:   black
+#255: white
+# trans img2 into gray picture
+img2gray = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+#make pixels >= 80 be 255(white), pixels < 80 be 0(black)
+#inverse it. 
+#Basically, first make low value pixels black, others white. Then reverse it, which means make low value pixels white, high value pixels black.
+ret, mask = cv2.threshold(img2gray, 80, 255, cv2.THRESH_BINARY_INV)
+
+#cv2.imshow('mask', mask)
+mask_inv = cv2.bitwise_not(mask)
+
+#So far, the mask is lower pixels become 255, higher become 0
+# mask_inv is lower is 0, higher is 255.
+
+#Exactly the same as 
+#ret, mask_inv = cv2.threshold(img2gray, 80, 255, cv2.THRESH_BINARY)
+#In general here, we make our roi keep the higher value from img2---img1_bg
+#then in img2_fg, keep lower
+img1_bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+img2_fg = cv2.bitwise_and(img2, img2, mask = mask)
+
+
+#add: higher from roi, and keep lower from the img2, make the transparent logo
+dst = cv2.add(img1_bg, img2_fg)
+#replace the cornor with new logo like img
+img1[0:rows, 0:cols] = dst
+
+
+
+
+cv2.imshow('mask_inv', mask_inv)
+cv2.imshow('mask', mask)
+cv2.imshow('img1_bg', img1_bg)
+cv2.imshow('img2_fg', img2_fg)
+cv2.imshow('dst', dst)
+
+cv2.waitKey(0)
+cv2.destroyAll
+
